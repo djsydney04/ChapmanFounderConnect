@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { signIn } from '@/utils/supabase';
+import { useRouter } from 'next/navigation';
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -11,11 +13,14 @@ const fadeIn = {
 };
 
 export default function SignInPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false,
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Generate random particles for the background effect
   const particles = Array.from({ length: 30 }, () => ({
@@ -26,10 +31,28 @@ export default function SignInPage() {
     yOffset: Math.random() * 30 - 15
   }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement sign-in logic
-    console.log('Sign in:', formData);
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error } = await signIn(formData.email, formData.password);
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data?.user) {
+        // Successful login, redirect to dashboard
+        router.push('/dashboard');
+      }
+    } catch (err: any) {
+      console.error('Sign in error:', err);
+      setError(err.message || 'Failed to sign in. Please check your credentials and try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -109,6 +132,12 @@ export default function SignInPage() {
             variants={fadeIn}
             className="mt-8 bg-white/10 backdrop-blur-md py-8 px-4 shadow-xl rounded-xl sm:px-10 border border-white/20"
           >
+            {error && (
+              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-md text-white text-sm">
+                {error}
+              </div>
+            )}
+            
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-200">
@@ -171,9 +200,10 @@ export default function SignInPage() {
               <div>
                 <button
                   type="submit"
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-lg text-sm font-medium text-black bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/50 transition-all duration-300"
+                  disabled={isLoading}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-lg text-sm font-medium text-black bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Sign in
+                  {isLoading ? 'Signing in...' : 'Sign in'}
                 </button>
               </div>
             </form>

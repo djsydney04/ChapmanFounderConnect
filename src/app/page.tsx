@@ -60,22 +60,11 @@ export default function LandingPage() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative min-h-screen overflow-hidden">
-        {/* Debug element to verify positioning */}
-        <div className="fixed top-2 left-2 z-50 bg-black/50 text-white text-xs px-2 py-1 rounded">
-          Background Status
-        </div>
-
         {/* Galaxy Background - Using img tag with higher priority */}
         <img 
           src="/images/background.png"
           alt="Galaxy background"
-          className="fixed top-0 left-0 w-full h-full object-cover"
-          style={{ 
-            opacity: 1,
-            zIndex: 0
-          }}
-          loading="eager"
-          decoding="sync"
+          className="fixed top-0 left-0 w-full h-full object-cover z-0"
         />
         
         {/* Fallback color in case image fails to load */}

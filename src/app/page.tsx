@@ -121,51 +121,49 @@ export default function LandingPage() {
         {/* Content Container - Ensure it's above everything */}
         <div className="relative z-20">
           {/* Content */}
-          <div className="container relative mx-auto px-4 pt-24 pb-16">
+          <div className="container relative mx-auto px-4 pt-40 pb-16">
             <motion.div
               variants={staggerChildren}
               initial="initial"
               animate="animate"
-              className="max-w-4xl mx-auto"
+              className="max-w-4xl mx-auto text-center"
             >
-              {/* Main Content */}
-              <div className="text-center relative">              
-                <motion.h1
-                  variants={fadeInUp}
-                  className="text-6xl sm:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-blue-100"
-                >
-                  Connect. Build.
-                  <br />
-                  <span className="text-white">Launch Your Startup.</span>
-                </motion.h1>
+              <div className="mb-28"></div> {/* Extra space to push content down */}
+              <motion.h1
+                variants={fadeInUp}
+                className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-200"
+              >
+                Connect. Build.
+                <br />
+                Launch Your Startup.
+              </motion.h1>
+              <motion.p
+                variants={fadeInUp}
+                className="text-lg md:text-xl text-gray-300 mb-12"
+              >
+                Join an exclusive network of Chapman student founders, developers, and
+                visionaries building the next generation of startups.
+              </motion.p>
 
-                <motion.p
-                  variants={fadeInUp}
-                  className="text-xl mb-8 text-white/80 max-w-2xl mx-auto"
+              <motion.div
+                variants={fadeInUp}
+                className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4"
+              >
+                <Link
+                  href="/auth/signup"
+                  className="group relative px-8 py-4 bg-white text-black rounded-xl font-semibold shadow-lg hover:shadow-white/25 transition-all duration-300 overflow-hidden"
                 >
-                  Join an exclusive network of student founders, developers, and visionaries building the next generation of startups.
-                </motion.p>
-
-                <motion.div
-                  variants={fadeInUp}
-                  className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4"
+                  <span className="relative z-10">Get Started</span>
+                  <div className="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </Link>
+                
+                <Link
+                  href="/auth/signin"
+                  className="px-8 py-4 backdrop-blur-md bg-white/10 rounded-xl font-semibold text-white border border-white/20 hover:bg-white/20 transition-all duration-300"
                 >
-                  <Link
-                    href="/auth/signup"
-                    className="group relative px-8 py-4 bg-white text-black rounded-xl font-semibold shadow-lg hover:shadow-white/25 transition-all duration-300 overflow-hidden"
-                  >
-                    <span className="relative z-10">Get Started</span>
-                    <div className="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </Link>
-                  
-                  <Link
-                    href="/auth/signin"
-                    className="px-8 py-4 backdrop-blur-md bg-white/10 rounded-xl font-semibold text-white border border-white/20 hover:bg-white/20 transition-all duration-300"
-                  >
-                    Sign In
-                  </Link>
-                </motion.div>
-              </div>
+                  Sign In
+                </Link>
+              </motion.div>
             </motion.div>
           </div>
         </div>

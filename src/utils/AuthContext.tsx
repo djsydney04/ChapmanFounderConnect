@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase, signIn, signUp, signOut, getCurrentUser, getProfile, createProfile, updateProfile as updateUserProfile, User, Profile } from './supabase';
+import { supabase, signIn, signUp, signOut, getCurrentUser, getProfile, createProfile as createUserProfile, updateProfile as updateUserProfile, User, Profile } from './supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -41,8 +41,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           
           // Fetch user profile
-          const { profile } = await getProfile(user.id);
-          setProfile(profile);
+          const { profile, error: profileError } = await getProfile(user.id);
+          
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
+          }
+          
+          // If profile exists, set it
+          if (profile) {
+            setProfile(profile);
+          } else {
+            // If no profile exists, create a basic one
+            console.log('No profile found, creating a basic one');
+            try {
+              const { profile: newProfile } = await createUserProfile({
+                user_id: user.id,
+                university: 'Chapman University',
+                bio: null,
+                interests: null,
+              });
+              
+              if (newProfile) {
+                setProfile(newProfile);
+              }
+            } catch (createProfileError) {
+              console.error('Error creating basic profile:', createProfileError);
+            }
+          }
         }
       } catch (error) {
         console.error('Error in auth state check:', error);
@@ -63,8 +88,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           
           // Fetch user profile
-          const { profile } = await getProfile(session.user.id);
-          setProfile(profile);
+          const { profile, error: profileError } = await getProfile(session.user.id);
+          
+          if (profileError) {
+            console.error('Error fetching profile on auth change:', profileError);
+          }
+          
+          if (profile) {
+            setProfile(profile);
+          } else {
+            // If no profile exists, create a basic one
+            try {
+              const { profile: newProfile } = await createUserProfile({
+                user_id: session.user.id,
+                university: 'Chapman University',
+                bio: null,
+                interests: null,
+              });
+              
+              if (newProfile) {
+                setProfile(newProfile);
+              }
+            } catch (createProfileError) {
+              console.error('Error creating basic profile on auth change:', createProfileError);
+            }
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setProfile(null);

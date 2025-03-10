@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { signUp, createProfile } from '@/utils/supabase';
+import { signUp, createProfile, signIn } from '@/utils/supabase';
 import { useRouter } from 'next/navigation';
 
 // Animation variants
@@ -290,12 +290,20 @@ export default function SignUpPage() {
           // Continue anyway, as the user is created
         }
         
+        // Automatically sign in the user
+        const { error: signInError } = await signIn(formData.email, formData.password);
+        
+        if (signInError) {
+          console.error('Error signing in after registration:', signInError);
+          // Continue anyway, as the user is created
+        }
+        
         // Show success message
         setRegistrationSuccess(true);
         
-        // Redirect to verification page or dashboard after a delay
+        // Redirect to home page after a delay
         setTimeout(() => {
-          router.push('/auth/verification');
+          router.push('/dashboard');
         }, 3000);
       }
     } catch (err: any) {
@@ -557,10 +565,10 @@ export default function SignUpPage() {
                 </motion.div>
                 <h3 className="text-2xl font-bold text-white mb-2">Registration Successful!</h3>
                 <p className="text-gray-300 mb-4">
-                  Please check your email to verify your account.
+                  Your account has been created successfully.
                 </p>
                 <p className="text-gray-400 text-sm">
-                  Redirecting you to the verification page...
+                  Redirecting you to the dashboard...
                 </p>
               </div>
             ) : (

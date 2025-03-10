@@ -50,7 +50,8 @@ export default function SignInPage() {
       try {
         // In a real app, you would not expose this, but for demo purposes it's helpful
         setDemoUsers([
-          { email: 'demo@example.com', password: 'password123' }
+          { email: 'demo@example.com', password: 'password123' },
+          { email: 'mitic@chapman.edu', password: 'password123' }
         ]);
       } catch (err) {
         console.error('Error fetching demo users:', err);
@@ -69,40 +70,21 @@ export default function SignInPage() {
     try {
       console.log('Attempting to sign in with:', formData.email);
       
-      // Try direct Supabase auth instead of our custom signIn function
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
+      // Use our signIn function which now includes direct authentication
+      const { data, error, usedDirectAuth, usedMagicLink } = await signIn(formData.email, formData.password);
       
       if (error) {
-        console.error('Direct sign in error:', error);
-        
-        // If password login fails, try magic link
-        if (error.message.includes('Invalid login credentials') || 
-            error.message.includes('Email logins are disabled')) {
-          console.log('Trying magic link login...');
-          
-          const { data: magicData, error: magicError } = await supabase.auth.signInWithOtp({
-            email: formData.email,
-            options: {
-              emailRedirectTo: `${window.location.origin}/auth/callback`,
-            },
-          });
-          
-          if (magicError) {
-            console.error('Magic link login failed:', magicError);
-            throw magicError;
-          }
-          
-          setMagicLinkSent(true);
-          return;
-        }
-        
+        console.error('Sign in error:', error);
         throw error;
       }
       
-      if (data?.user) {
+      if (usedMagicLink) {
+        // If we used a magic link, show the user a message
+        setMagicLinkSent(true);
+        return;
+      }
+      
+      if (data?.user || usedDirectAuth) {
         console.log('Login successful, redirecting to dashboard');
         // Successful login, redirect to dashboard
         router.push('/dashboard');
@@ -121,17 +103,24 @@ export default function SignInPage() {
     setError(null);
     
     try {
-      console.log('Attempting demo login with:', email);
+      console.log('Attempting login with:', email);
       
-      // For demo purposes, bypass authentication completely
-      console.log('Using special demo login bypass...');
+      // Use our signIn function which now includes direct authentication
+      const { data, error, usedDirectAuth } = await signIn(email, password);
       
-      // Redirect to dashboard in demo mode
-      router.push('/dashboard?demo=true');
-      return;
+      if (error) {
+        console.error('Login error:', error);
+        throw error;
+      }
+      
+      if (data?.user || usedDirectAuth) {
+        console.log('Login successful, redirecting to dashboard');
+        // Successful login, redirect to dashboard
+        router.push('/dashboard');
+      }
     } catch (err: any) {
-      console.error('Demo login error:', err);
-      setError(err.message || 'Failed to sign in with demo account.');
+      console.error('Login error:', err);
+      setError(err.message || 'Failed to sign in. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -309,11 +298,11 @@ export default function SignInPage() {
                   </button>
                 </div>
                 
-                {/* Demo Account Section */}
+                {/* Known Users Section */}
                 {demoUsers.length > 0 && (
                   <div className="mt-6 pt-6 border-t border-white/10">
                     <h3 className="text-sm font-medium text-gray-200 mb-4 text-center">
-                      Or use a demo account
+                      Quick Login
                     </h3>
                     <div className="space-y-2">
                       {demoUsers.map((user, index) => (
@@ -324,7 +313,7 @@ export default function SignInPage() {
                           disabled={isLoading}
                           className="w-full flex justify-center py-2 px-4 border border-white/20 rounded-md shadow-sm text-sm font-medium text-white bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Sign in as {user.email}
+                          Login as {user.email}
                         </button>
                       ))}
                     </div>

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { signIn } from '@/utils/supabase';
+import { signIn, supabase } from '@/utils/supabase';
 import { useRouter } from 'next/navigation';
 
 const fadeIn = {
@@ -22,15 +22,33 @@ export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [demoUsers, setDemoUsers] = useState<{email: string, password: string}[]>([]);
 
-  // Generate random particles for the background effect
-  const particles = Array.from({ length: 30 }, () => ({
-    left: `${Math.random() * 100}%`,
-    top: `${Math.random() * 100}%`,
-    opacity: Math.random() * 0.5 + 0.3,
-    duration: Math.random() * 3 + 2,
-    yOffset: Math.random() * 30 - 15
-  }));
+  // Check for existing session on page load
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        router.push('/dashboard');
+      }
+    };
+    
+    checkSession();
+    
+    // Fetch demo users
+    const fetchDemoUsers = async () => {
+      try {
+        // In a real app, you would not expose this, but for demo purposes it's helpful
+        setDemoUsers([
+          { email: 'demo@example.com', password: 'password123' }
+        ]);
+      } catch (err) {
+        console.error('Error fetching demo users:', err);
+      }
+    };
+    
+    fetchDemoUsers();
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,9 +57,12 @@ export default function SignInPage() {
     setMagicLinkSent(false);
     
     try {
+      console.log('Attempting to sign in with:', formData.email);
+      
       const { data, error, usedMagicLink } = await signIn(formData.email, formData.password);
       
       if (error) {
+        console.error('Sign in error:', error);
         throw error;
       }
       
@@ -52,6 +73,7 @@ export default function SignInPage() {
       }
       
       if (data?.user) {
+        console.log('Login successful, redirecting to dashboard');
         // Successful login, redirect to dashboard
         router.push('/dashboard');
       }
@@ -62,6 +84,46 @@ export default function SignInPage() {
       setIsLoading(false);
     }
   };
+
+  const handleDemoLogin = async (email: string, password: string) => {
+    setFormData({ ...formData, email, password });
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      console.log('Attempting demo login with:', email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        console.error('Demo login error:', error);
+        throw error;
+      }
+      
+      if (data?.user) {
+        console.log('Demo login successful, redirecting to dashboard');
+        // Successful login, redirect to dashboard
+        router.push('/dashboard');
+      }
+    } catch (err: any) {
+      console.error('Demo login error:', err);
+      setError(err.message || 'Failed to sign in with demo account.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Generate random particles for the background effect
+  const particles = Array.from({ length: 30 }, () => ({
+    left: `${Math.random() * 100}%`,
+    top: `${Math.random() * 100}%`,
+    opacity: Math.random() * 0.5 + 0.3,
+    duration: Math.random() * 3 + 2,
+    yOffset: Math.random() * 30 - 15
+  }));
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -234,6 +296,28 @@ export default function SignInPage() {
                     {isLoading ? 'Signing in...' : 'Sign in'}
                   </button>
                 </div>
+                
+                {/* Demo Account Section */}
+                {demoUsers.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-white/10">
+                    <h3 className="text-sm font-medium text-gray-200 mb-4 text-center">
+                      Or use a demo account
+                    </h3>
+                    <div className="space-y-2">
+                      {demoUsers.map((user, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleDemoLogin(user.email, user.password)}
+                          disabled={isLoading}
+                          className="w-full flex justify-center py-2 px-4 border border-white/20 rounded-md shadow-sm text-sm font-medium text-white bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Sign in as {user.email}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </form>
             )}
           </motion.div>

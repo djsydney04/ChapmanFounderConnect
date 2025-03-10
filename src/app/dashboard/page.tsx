@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase, signOut, getCurrentUser, getProfile } from '@/utils/supabase';
 import Link from 'next/link';
+import DashboardLayout from '@/components/Layout/DashboardLayout';
+import { Users, Briefcase, Calendar, Book } from 'react-feather';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -126,102 +128,139 @@ export default function DashboardPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#090618] text-white">
-      {/* Header */}
-      <header className="bg-black/30 backdrop-blur-md border-b border-white/10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold">FounderConnect</Link>
-          <div className="flex items-center space-x-4">
-            {isDemo && (
-              <div className="px-3 py-1 bg-yellow-500/20 text-yellow-300 text-sm rounded-md">
-                Demo Mode
-              </div>
-            )}
-            <button
-              onClick={handleSignOut}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-md transition-colors"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
+  // Mock data - replace with real data from your backend
+  const userMock = {
+    name: 'John',
+    suggestedConnections: [
+      { id: 1, name: 'Sarah Chen', role: 'Software Engineer', major: 'Computer Science' },
+      { id: 2, name: 'Mike Johnson', role: 'Product Designer', major: 'Design' },
+    ],
+  };
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="bg-white/5 backdrop-blur-md rounded-xl p-6 border border-white/10 shadow-xl">
-          <h1 className="text-2xl font-bold mb-6">Welcome to your Dashboard</h1>
-          
-          <div className="bg-white/10 rounded-lg p-4 mb-6">
-            <h2 className="text-xl font-semibold mb-2">Your Account</h2>
-            <p><strong>Email:</strong> {user?.email}</p>
-            <p><strong>User ID:</strong> {user?.id}</p>
-            <p><strong>Last Sign In:</strong> {new Date(user?.last_sign_in_at || Date.now()).toLocaleString()}</p>
-            {profile && (
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <h3 className="text-lg font-semibold mb-2">Profile Information</h3>
-                {profile.full_name && <p><strong>Name:</strong> {profile.full_name}</p>}
-                {profile.major && <p><strong>Major:</strong> {profile.major}</p>}
-                {profile.year && <p><strong>Year:</strong> {profile.year}</p>}
-                {profile.bio && <p><strong>Bio:</strong> {profile.bio}</p>}
-                {profile.university && <p><strong>University:</strong> {profile.university}</p>}
-                {profile.interests && profile.interests.length > 0 && (
-                  <div className="mt-2">
-                    <strong>Interests:</strong>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {profile.interests.map((interest: string, index: number) => (
-                        <span key={index} className="px-2 py-1 bg-white/10 rounded-md text-xs">
-                          {interest}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+  const announcements = [
+    {
+      id: 1,
+      title: 'New Feature: Video Chat',
+      content: 'Connect with potential co-founders through our new video chat feature!',
+      date: '2024-03-10',
+    },
+    {
+      id: 2,
+      title: 'Upcoming Pitch Night',
+      content: 'Join us for our monthly pitch night next week.',
+      date: '2024-03-15',
+    },
+  ];
+
+  const recentActivity = [
+    {
+      id: 1,
+      type: 'connection',
+      content: 'Alex matched with you!',
+      time: '2 hours ago',
+    },
+    {
+      id: 2,
+      type: 'job',
+      content: 'New job posted: Frontend Developer at TechStart',
+      time: '5 hours ago',
+    },
+  ];
+
+  return (
+    <DashboardLayout>
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Welcome Section */}
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <h1 className="text-2xl font-bold text-gray-800">Welcome back, {userMock.name}! 👋</h1>
+          <p className="mt-2 text-gray-600">Ready to find your next co-founder or startup opportunity?</p>
+        </div>
+
+        {/* Quick Links */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link href="/co-founders" className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center space-x-4">
+              <div className="bg-blue-100 p-3 rounded-lg">
+                <Users className="w-6 h-6 text-blue-600" />
               </div>
-            )}
-            {isDemo && (
-              <div className="mt-2 p-2 bg-yellow-500/10 text-yellow-300 text-sm rounded">
-                <p>You are viewing the dashboard in demo mode. Some features may be limited.</p>
+              <div>
+                <h3 className="font-semibold">Find Co-Founders</h3>
+                <p className="text-sm text-gray-600">Match with potential partners</p>
               </div>
-            )}
+            </div>
+          </Link>
+
+          <Link href="/jobs" className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center space-x-4">
+              <div className="bg-green-100 p-3 rounded-lg">
+                <Briefcase className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Job Board</h3>
+                <p className="text-sm text-gray-600">Find startup opportunities</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/events" className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center space-x-4">
+              <div className="bg-purple-100 p-3 rounded-lg">
+                <Calendar className="w-6 h-6 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Events</h3>
+                <p className="text-sm text-gray-600">Join startup events</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/resources" className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center space-x-4">
+              <div className="bg-orange-100 p-3 rounded-lg">
+                <Book className="w-6 h-6 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Resources</h3>
+                <p className="text-sm text-gray-600">Access startup guides</p>
+              </div>
+            </div>
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Announcements */}
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <h2 className="text-xl font-semibold mb-4">Announcements</h2>
+            <div className="space-y-4">
+              {announcements.map((announcement) => (
+                <div key={announcement.id} className="border-b pb-4 last:border-b-0 last:pb-0">
+                  <h3 className="font-medium">{announcement.title}</h3>
+                  <p className="text-sm text-gray-600 mt-1">{announcement.content}</p>
+                  <span className="text-xs text-gray-500 mt-2 block">{announcement.date}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white/10 rounded-lg p-4">
-              <h2 className="text-xl font-semibold mb-4">Find Co-Founders</h2>
-              <p className="text-gray-300 mb-4">Connect with potential co-founders who complement your skills.</p>
-              <button className="px-4 py-2 bg-white text-black rounded-md hover:bg-blue-50 transition-colors">
-                Explore Founders
-              </button>
-            </div>
-            
-            <div className="bg-white/10 rounded-lg p-4">
-              <h2 className="text-xl font-semibold mb-4">Startup Jobs</h2>
-              <p className="text-gray-300 mb-4">Find opportunities at exciting startups or post your own listings.</p>
-              <button className="px-4 py-2 bg-white text-black rounded-md hover:bg-blue-50 transition-colors">
-                View Jobs
-              </button>
-            </div>
-            
-            <div className="bg-white/10 rounded-lg p-4">
-              <h2 className="text-xl font-semibold mb-4">Upcoming Events</h2>
-              <p className="text-gray-300 mb-4">Networking events, workshops, and pitch competitions.</p>
-              <button className="px-4 py-2 bg-white text-black rounded-md hover:bg-blue-50 transition-colors">
-                See Events
-              </button>
-            </div>
-            
-            <div className="bg-white/10 rounded-lg p-4">
-              <h2 className="text-xl font-semibold mb-4">Resources</h2>
-              <p className="text-gray-300 mb-4">Access startup guides, templates, and learning materials.</p>
-              <button className="px-4 py-2 bg-white text-black rounded-md hover:bg-blue-50 transition-colors">
-                Browse Resources
-              </button>
+
+          {/* Activity Feed */}
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+            <div className="space-y-4">
+              {recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-center space-x-3">
+                  <div className={`w-2 h-2 rounded-full ${
+                    activity.type === 'connection' ? 'bg-blue-500' : 'bg-green-500'
+                  }`} />
+                  <div>
+                    <p className="text-sm">{activity.content}</p>
+                    <span className="text-xs text-gray-500">{activity.time}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 } 

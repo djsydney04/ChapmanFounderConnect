@@ -23,9 +23,19 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [demoUsers, setDemoUsers] = useState<{email: string, password: string}[]>([]);
+  const [particles, setParticles] = useState<any[]>([]);
 
-  // Check for existing session on page load
+  // Check for existing session on page load and generate particles
   useEffect(() => {
+    // Generate particles for the background effect
+    setParticles(Array.from({ length: 30 }, () => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      opacity: Math.random() * 0.5 + 0.3,
+      duration: Math.random() * 3 + 2,
+      yOffset: Math.random() * 30 - 15
+    })));
+    
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
@@ -113,37 +123,12 @@ export default function SignInPage() {
     try {
       console.log('Attempting demo login with:', email);
       
-      // Use direct Supabase auth for demo login
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // For demo purposes, bypass authentication completely
+      console.log('Using special demo login bypass...');
       
-      if (error) {
-        console.error('Demo login error:', error);
-        
-        // If password login fails for demo, try a different approach
-        if (error.message.includes('Email logins are disabled')) {
-          // For demo purposes, we'll use a special case to bypass the restriction
-          // This is just for demonstration and would be replaced with proper auth in production
-          
-          // Simulate successful login by setting a session manually
-          // Note: This is not secure and is only for demonstration
-          console.log('Using special demo login bypass...');
-          
-          // Redirect to dashboard as if login was successful
-          router.push('/dashboard?demo=true');
-          return;
-        }
-        
-        throw error;
-      }
-      
-      if (data?.user) {
-        console.log('Demo login successful, redirecting to dashboard');
-        // Successful login, redirect to dashboard
-        router.push('/dashboard');
-      }
+      // Redirect to dashboard in demo mode
+      router.push('/dashboard?demo=true');
+      return;
     } catch (err: any) {
       console.error('Demo login error:', err);
       setError(err.message || 'Failed to sign in with demo account.');
@@ -151,15 +136,6 @@ export default function SignInPage() {
       setIsLoading(false);
     }
   };
-
-  // Generate random particles for the background effect
-  const particles = Array.from({ length: 30 }, () => ({
-    left: `${Math.random() * 100}%`,
-    top: `${Math.random() * 100}%`,
-    opacity: Math.random() * 0.5 + 0.3,
-    duration: Math.random() * 3 + 2,
-    yOffset: Math.random() * 30 - 15
-  }));
 
   return (
     <div className="min-h-screen relative overflow-hidden">

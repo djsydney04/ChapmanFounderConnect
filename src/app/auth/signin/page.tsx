@@ -21,6 +21,7 @@ export default function SignInPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
 
   // Generate random particles for the background effect
   const particles = Array.from({ length: 30 }, () => ({
@@ -35,12 +36,19 @@ export default function SignInPage() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setMagicLinkSent(false);
     
     try {
-      const { data, error } = await signIn(formData.email, formData.password);
+      const { data, error, usedMagicLink } = await signIn(formData.email, formData.password);
       
       if (error) {
         throw error;
+      }
+      
+      if (usedMagicLink) {
+        // If we used a magic link, show the user a message
+        setMagicLinkSent(true);
+        return;
       }
       
       if (data?.user) {
@@ -138,75 +146,96 @@ export default function SignInPage() {
               </div>
             )}
             
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-200">
-                  Email address
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="appearance-none block w-full px-3 py-2 border border-white/30 bg-black/30 text-white rounded-md shadow-sm focus:outline-none focus:ring-white/50 focus:border-white/50"
-                  />
+            {magicLinkSent ? (
+              <div className="text-center py-4">
+                <div className="w-16 h-16 bg-blue-500/20 rounded-full mx-auto flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
                 </div>
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-200">
-                  Password
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="appearance-none block w-full px-3 py-2 border border-white/30 bg-black/30 text-white rounded-md shadow-sm focus:outline-none focus:ring-white/50 focus:border-white/50"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    checked={formData.rememberMe}
-                    onChange={(e) => setFormData({ ...formData, rememberMe: e.target.checked })}
-                    className="h-4 w-4 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-200">
-                    Remember me
-                  </label>
-                </div>
-
-                <div className="text-sm">
-                  <Link href="/auth/forgot-password" className="font-medium text-blue-200 hover:text-white">
-                    Forgot your password?
-                  </Link>
-                </div>
-              </div>
-
-              <div>
+                <h3 className="text-xl font-medium text-white mb-2">Check your inbox</h3>
+                <p className="text-gray-300 mb-6">
+                  We've sent a magic link to <span className="font-medium text-white">{formData.email}</span>. 
+                  Click the link to sign in.
+                </p>
                 <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-lg text-sm font-medium text-black bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setMagicLinkSent(false)}
+                  className="w-full flex justify-center py-2 px-4 border border-white/30 rounded-md shadow-sm text-sm font-medium text-white bg-transparent hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/50 transition-all duration-300"
                 >
-                  {isLoading ? 'Signing in...' : 'Sign in'}
+                  Try again
                 </button>
               </div>
-            </form>
+            ) : (
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-200">
+                    Email address
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="appearance-none block w-full px-3 py-2 border border-white/30 bg-black/30 text-white rounded-md shadow-sm focus:outline-none focus:ring-white/50 focus:border-white/50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-200">
+                    Password
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      autoComplete="current-password"
+                      required
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="appearance-none block w-full px-3 py-2 border border-white/30 bg-black/30 text-white rounded-md shadow-sm focus:outline-none focus:ring-white/50 focus:border-white/50"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <input
+                      id="remember-me"
+                      name="remember-me"
+                      type="checkbox"
+                      checked={formData.rememberMe}
+                      onChange={(e) => setFormData({ ...formData, rememberMe: e.target.checked })}
+                      className="h-4 w-4 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-200">
+                      Remember me
+                    </label>
+                  </div>
+
+                  <div className="text-sm">
+                    <Link href="/auth/forgot-password" className="font-medium text-blue-200 hover:text-white">
+                      Forgot your password?
+                    </Link>
+                  </div>
+                </div>
+
+                <div>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-lg text-sm font-medium text-black bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Signing in...' : 'Sign in'}
+                  </button>
+                </div>
+              </form>
+            )}
           </motion.div>
         </motion.div>
       </div>

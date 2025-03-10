@@ -4,7 +4,13 @@ const supabaseUrl = 'https://goolmqemnjpyiluwxnkg.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdvb2xtcWVtbmpweWlsdXd4bmtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0MTI2OTksImV4cCI6MjA1Njk4ODY5OX0.icxzNy6587kAiJHZ1GvONiqP320qnT6HYLZGUXd6u_g';
 
 // Create a single supabase client for interacting with your database
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+});
 
 // Types based on the database schema
 export type Profile = {
@@ -55,11 +61,35 @@ export const signUp = async (email: string, password: string) => {
 };
 
 export const signIn = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-  return { data, error };
+  try {
+    // First try password login
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (error && error.message.includes('Email logins are disabled')) {
+      // If email logins are disabled, try magic link
+      console.log('Email logins are disabled, trying magic link...');
+      const magicLinkResult = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      
+      return {
+        data: magicLinkResult.data,
+        error: magicLinkResult.error,
+        usedMagicLink: true
+      };
+    }
+    
+    return { data, error };
+  } catch (err) {
+    console.error('Sign in error:', err);
+    return { data: null, error: err };
+  }
 };
 
 export const signOut = async () => {

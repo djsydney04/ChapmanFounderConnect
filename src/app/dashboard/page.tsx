@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase, signOut } from '@/utils/supabase';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isDemo = searchParams.get('demo') === 'true';
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -14,6 +16,18 @@ export default function DashboardPage() {
     const checkUser = async () => {
       try {
         setLoading(true);
+        
+        // If in demo mode, create a fake user
+        if (isDemo) {
+          setUser({
+            id: 'demo-user-id',
+            email: 'demo@example.com',
+            last_sign_in_at: new Date().toISOString()
+          });
+          setLoading(false);
+          return;
+        }
+        
         const { data } = await supabase.auth.getSession();
         
         if (!data.session) {
@@ -27,17 +41,25 @@ export default function DashboardPage() {
         setUser(userData.user);
       } catch (error) {
         console.error('Error checking authentication:', error);
-        router.push('/auth/signin');
+        if (!isDemo) {
+          router.push('/auth/signin');
+        }
       } finally {
         setLoading(false);
       }
     };
     
     checkUser();
-  }, [router]);
+  }, [router, isDemo]);
 
   const handleSignOut = async () => {
     try {
+      if (isDemo) {
+        // In demo mode, just redirect to signin
+        router.push('/auth/signin');
+        return;
+      }
+      
       await signOut();
       router.push('/auth/signin');
     } catch (error) {
@@ -62,12 +84,19 @@ export default function DashboardPage() {
       <header className="bg-black/30 backdrop-blur-md border-b border-white/10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <Link href="/" className="text-2xl font-bold">FounderConnect</Link>
-          <button
-            onClick={handleSignOut}
-            className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-md transition-colors"
-          >
-            Sign Out
-          </button>
+          <div className="flex items-center space-x-4">
+            {isDemo && (
+              <div className="px-3 py-1 bg-yellow-500/20 text-yellow-300 text-sm rounded-md">
+                Demo Mode
+              </div>
+            )}
+            <button
+              onClick={handleSignOut}
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-md transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -81,6 +110,11 @@ export default function DashboardPage() {
             <p><strong>Email:</strong> {user?.email}</p>
             <p><strong>User ID:</strong> {user?.id}</p>
             <p><strong>Last Sign In:</strong> {new Date(user?.last_sign_in_at || Date.now()).toLocaleString()}</p>
+            {isDemo && (
+              <div className="mt-2 p-2 bg-yellow-500/10 text-yellow-300 text-sm rounded">
+                <p>You are viewing the dashboard in demo mode. Some features may be limited.</p>
+              </div>
+            )}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase, signOut } from '@/utils/supabase';
+import { supabase, signOut, getCurrentUser, getProfile } from '@/utils/supabase';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isDemo = searchParams.get('demo') === 'true';
+  const isDemo = searchParams?.get('demo') === 'true';
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,21 +25,65 @@ export default function DashboardPage() {
             email: 'demo@example.com',
             last_sign_in_at: new Date().toISOString()
           });
+          
+          setProfile({
+            id: 'demo-profile-id',
+            user_id: 'demo-user-id',
+            university: 'Chapman University',
+            bio: 'Demo User - Computer Science Student',
+            interests: ['Startups', 'Technology', 'Entrepreneurship'],
+            created_at: new Date().toISOString(),
+            full_name: 'Demo User',
+            major: 'Computer Science',
+            year: 'Senior',
+            skills: ['Programming', 'Design', 'Marketing'],
+            linkedin_url: 'https://linkedin.com',
+            twitter_url: 'https://twitter.com'
+          });
+          
           setLoading(false);
           return;
         }
         
-        const { data } = await supabase.auth.getSession();
+        // Check for manual session first
+        const manualSession = localStorage.getItem('supabase.auth.token');
+        if (manualSession) {
+          try {
+            const parsed = JSON.parse(manualSession);
+            if (parsed.currentSession && parsed.currentSession.user) {
+              const userData = parsed.currentSession.user;
+              setUser(userData);
+              
+              // Get profile for this user
+              const { profile } = await getProfile(userData.id);
+              if (profile) {
+                setProfile(profile);
+              }
+              
+              setLoading(false);
+              return;
+            }
+          } catch (e) {
+            console.error('Error parsing manual session:', e);
+          }
+        }
         
-        if (!data.session) {
-          // No active session, redirect to login
+        // Fall back to Supabase session
+        const { user: currentUser, error } = await getCurrentUser();
+        
+        if (error || !currentUser) {
+          console.error('Error fetching user or no user found:', error);
           router.push('/auth/signin');
           return;
         }
         
-        // Get user details
-        const { data: userData } = await supabase.auth.getUser();
-        setUser(userData.user);
+        setUser(currentUser);
+        
+        // Fetch user profile
+        const { profile } = await getProfile(currentUser.id);
+        if (profile) {
+          setProfile(profile);
+        }
       } catch (error) {
         console.error('Error checking authentication:', error);
         if (!isDemo) {
@@ -54,6 +99,9 @@ export default function DashboardPage() {
 
   const handleSignOut = async () => {
     try {
+      // Clear any manual session
+      localStorage.removeItem('supabase.auth.token');
+      
       if (isDemo) {
         // In demo mode, just redirect to signin
         router.push('/auth/signin');
@@ -110,6 +158,28 @@ export default function DashboardPage() {
             <p><strong>Email:</strong> {user?.email}</p>
             <p><strong>User ID:</strong> {user?.id}</p>
             <p><strong>Last Sign In:</strong> {new Date(user?.last_sign_in_at || Date.now()).toLocaleString()}</p>
+            {profile && (
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <h3 className="text-lg font-semibold mb-2">Profile Information</h3>
+                {profile.full_name && <p><strong>Name:</strong> {profile.full_name}</p>}
+                {profile.major && <p><strong>Major:</strong> {profile.major}</p>}
+                {profile.year && <p><strong>Year:</strong> {profile.year}</p>}
+                {profile.bio && <p><strong>Bio:</strong> {profile.bio}</p>}
+                {profile.university && <p><strong>University:</strong> {profile.university}</p>}
+                {profile.interests && profile.interests.length > 0 && (
+                  <div className="mt-2">
+                    <strong>Interests:</strong>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {profile.interests.map((interest: string, index: number) => (
+                        <span key={index} className="px-2 py-1 bg-white/10 rounded-md text-xs">
+                          {interest}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             {isDemo && (
               <div className="mt-2 p-2 bg-yellow-500/10 text-yellow-300 text-sm rounded">
                 <p>You are viewing the dashboard in demo mode. Some features may be limited.</p>

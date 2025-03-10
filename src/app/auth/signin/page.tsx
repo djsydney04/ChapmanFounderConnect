@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { signIn, supabase } from '@/utils/supabase';
+import { signIn, supabase, directAuth } from '@/utils/supabase';
 import { useRouter } from 'next/navigation';
 
 const fadeIn = {
@@ -70,7 +70,17 @@ export default function SignInPage() {
     try {
       console.log('Attempting to sign in with:', formData.email);
       
-      // Use our signIn function which now includes direct authentication
+      // Try direct authentication first for immediate login
+      const { data: directData, error: directError, directAuthUsed } = await directAuth(formData.email, formData.password);
+      
+      if (directAuthUsed && !directError) {
+        console.log('Direct auth successful, redirecting to dashboard');
+        // Force a hard navigation to ensure the page reloads
+        window.location.href = '/dashboard';
+        return;
+      }
+      
+      // If direct auth failed or wasn't used, try regular sign in
       const { data, error, usedDirectAuth, usedMagicLink } = await signIn(formData.email, formData.password);
       
       if (error) {
@@ -86,8 +96,8 @@ export default function SignInPage() {
       
       if (data?.user || usedDirectAuth) {
         console.log('Login successful, redirecting to dashboard');
-        // Successful login, redirect to dashboard
-        router.push('/dashboard');
+        // Force a hard navigation to ensure the page reloads
+        window.location.href = '/dashboard';
       }
     } catch (err: any) {
       console.error('Sign in error:', err);
@@ -105,7 +115,17 @@ export default function SignInPage() {
     try {
       console.log('Attempting login with:', email);
       
-      // Use our signIn function which now includes direct authentication
+      // Use direct auth for known users
+      const { data: directData, error: directError, directAuthUsed } = await directAuth(email, password);
+      
+      if (directAuthUsed && !directError) {
+        console.log('Direct auth successful, redirecting to dashboard');
+        // Force a hard navigation to ensure the page reloads
+        window.location.href = '/dashboard';
+        return;
+      }
+      
+      // Fall back to regular sign in if direct auth fails
       const { data, error, usedDirectAuth } = await signIn(email, password);
       
       if (error) {
@@ -115,8 +135,8 @@ export default function SignInPage() {
       
       if (data?.user || usedDirectAuth) {
         console.log('Login successful, redirecting to dashboard');
-        // Successful login, redirect to dashboard
-        router.push('/dashboard');
+        // Force a hard navigation to ensure the page reloads
+        window.location.href = '/dashboard';
       }
     } catch (err: any) {
       console.error('Login error:', err);
